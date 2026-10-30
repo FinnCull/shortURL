@@ -6,6 +6,7 @@ import com.github.finncull.urlshortener.exception.ShortCodeNotFoundException;
 import com.github.finncull.urlshortener.model.URLMapping;
 import com.github.finncull.urlshortener.repository.URLRepository;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 
 import java.net.InetAddress;
@@ -20,7 +21,8 @@ import java.util.Optional;
 @Service
 public class URLService {
     private final URLRepository repository;
-    private static final int CODELENGTH = 7;
+    private static final int CODELENGTH = 10;
+    private static final int MAX_CODE_ATTEMPTS = 5;
     private static final String ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
     private final SecureRandom secureRandom = new SecureRandom();
     private final String appDomain;
@@ -40,19 +42,17 @@ public class URLService {
         return sb.toString();
     }
 
-    public String generateValidShortCode(){
-        String candidateShortCode = generateShortCode(CODELENGTH);
-        while(repository.existsById(candidateShortCode)){
-            candidateShortCode = generateShortCode(CODELENGTH);
-        }
-        return candidateShortCode;
-    }
-
     public URLMapping handleNewShortURLCreation(String originalURL, LocalDateTime expiryDate){
         validateOriginalUrl(originalURL);
-        String shortCode = generateValidShortCode();
-        URLMapping newURLMapping = new URLMapping(shortCode, originalURL, expiryDate);
-        return repository.save(newURLMapping);
+        for (int attempt = 0; attempt < MAX_CODE_ATTEMPTS; attempt++){
+            URLMapping newURLMapping = new URLMapping(generateShortCode(CODELENGTH), originalURL, expiryDate);
+            try{
+                return repository.save(newURLMapping);
+            } catch (DataIntegrityViolationException e){
+                // short code already taken, try another
+            }
+        }
+        throw new IllegalStateException("Could not generate a unique short code after " + MAX_CODE_ATTEMPTS + " attempts");
     }
 
     public String findCorrespondingURL(String shortCode){
