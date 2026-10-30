@@ -30,7 +30,8 @@ function normaliseUrl(input: string): string {
 export function ShortenForm({ onCreated }: Props) {
   const [url, setUrl] = useState('')
   const [preset, setPreset] = useState<PresetId>('7d')
-  const [customExpiry, setCustomExpiry] = useState(() => toDateTimeInputValue(addDays(new Date(), 7)))
+  const [customDate, setCustomDate] = useState('')
+  const [customTime, setCustomTime] = useState('00:00')
   const [errors, setErrors] = useState<Record<string, string>>({})
   const now = useNow()
 
@@ -70,8 +71,16 @@ export function ShortenForm({ onCreated }: Props) {
       return
     }
 
+    if (preset === 'custom' && !customDate) {
+      setErrors({ expiryDate: 'Pick an expiry date' })
+      return
+    }
+
     const selected = PRESETS.find((p) => p.id === preset)!
-    const expiry = selected.days !== null ? addDays(new Date(), selected.days) : new Date(customExpiry)
+    const expiry =
+      selected.days !== null
+        ? addDays(new Date(), selected.days)
+        : new Date(`${customDate}T${customTime || '00:00'}`)
     if (Number.isNaN(expiry.getTime()) || expiry <= new Date()) {
       setErrors({ expiryDate: 'Expiry must be in the future' })
       return
@@ -90,8 +99,9 @@ export function ShortenForm({ onCreated }: Props) {
       <label htmlFor="url" className="mb-2 block text-sm font-medium">
         Long URL
       </label>
-      <div className="flex flex-col gap-3 sm:flex-row">
-        <div className="relative flex-1">
+      {/* Shared grid so the expiry row lines up with the URL input, not the button */}
+      <div className="grid gap-x-3 sm:grid-cols-[1fr_auto]">
+        <div className="relative">
           <Link2 className="pointer-events-none absolute top-1/2 left-3 size-5 -translate-y-1/2 text-zinc-400" />
           <input
             id="url"
@@ -120,7 +130,7 @@ export function ShortenForm({ onCreated }: Props) {
           type="submit"
           disabled={mutation.isPending}
           className={cx(
-            'inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-red-600 px-6 font-semibold text-white',
+            'mt-3 inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-red-600 px-6 font-semibold text-white sm:mt-0',
             'shadow-sm shadow-red-600/20 transition hover:bg-red-500 active:scale-[0.98]',
             'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-500',
             'disabled:cursor-not-allowed disabled:opacity-70',
@@ -129,58 +139,70 @@ export function ShortenForm({ onCreated }: Props) {
           {mutation.isPending && <Loader2 className="size-4 animate-spin" />}
           Shorten
         </button>
-      </div>
-      {errors.originalUrl && (
-        <p id="url-error" role="alert" className="mt-2 text-sm text-red-600 dark:text-red-400">
-          {errors.originalUrl}
-        </p>
-      )}
-
-      <fieldset className="mt-5">
-        <legend className="mb-2 flex items-center gap-1.5 text-sm font-medium">
-          <CalendarClock className="size-4 text-zinc-400" />
-          Expires in
-        </legend>
-        <div className="flex flex-wrap gap-2">
-          {PRESETS.map((p) => (
-            <button
-              key={p.id}
-              type="button"
-              onClick={() => {
-                setPreset(p.id)
-                clearError('expiryDate')
-              }}
-              aria-pressed={preset === p.id}
-              className={cx(
-                'rounded-lg border px-3.5 py-1.5 text-sm font-medium transition',
-                preset === p.id
-                  ? 'border-red-600 bg-red-600 text-white'
-                  : 'border-zinc-200 text-zinc-700 hover:border-zinc-300 hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800',
-              )}
-            >
-              {p.label}
-            </button>
-          ))}
-          {preset === 'custom' && (
-            <input
-              type="datetime-local"
-              aria-label="Custom expiry date"
-              value={customExpiry}
-              min={toDateTimeInputValue(now)}
-              onChange={(e) => {
-                setCustomExpiry(e.target.value)
-                clearError('expiryDate')
-              }}
-              className="rounded-lg border border-zinc-200 bg-zinc-50 px-3 text-sm outline-none focus:border-red-500 focus:ring-4 focus:ring-red-500/15 dark:border-zinc-700 dark:bg-zinc-950"
-            />
-          )}
-        </div>
-        {errors.expiryDate && (
-          <p role="alert" className="mt-2 text-sm text-red-600 dark:text-red-400">
-            {errors.expiryDate}
+        {errors.originalUrl && (
+          <p id="url-error" role="alert" className="mt-2 text-sm text-red-600 sm:col-start-1 dark:text-red-400">
+            {errors.originalUrl}
           </p>
         )}
-      </fieldset>
+
+        <fieldset className="mt-5 sm:col-start-1">
+          <legend className="mb-2 flex items-center gap-1.5 text-sm font-medium">
+            <CalendarClock className="size-4 text-zinc-400" />
+            Expires in
+          </legend>
+          <div className="flex flex-wrap gap-2">
+            {PRESETS.map((p) => (
+              <button
+                key={p.id}
+                type="button"
+                onClick={() => {
+                  setPreset(p.id)
+                  clearError('expiryDate')
+                }}
+                aria-pressed={preset === p.id}
+                className={cx(
+                  'rounded-lg border px-3.5 py-1.5 text-sm font-medium transition',
+                  preset === p.id
+                    ? 'border-red-600 bg-red-600 text-white'
+                    : 'border-zinc-200 text-zinc-700 hover:border-zinc-300 hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800',
+                )}
+              >
+                {p.label}
+              </button>
+            ))}
+            {preset === 'custom' && (
+              <div className="ml-auto flex items-center rounded-lg border border-zinc-200 bg-zinc-50 text-sm transition focus-within:border-red-500 focus-within:ring-4 focus-within:ring-red-500/15 dark:border-zinc-700 dark:bg-zinc-950">
+                <input
+                  type="date"
+                  aria-label="Custom expiry date"
+                  value={customDate}
+                  min={toDateTimeInputValue(now).slice(0, 10)}
+                  onChange={(e) => {
+                    setCustomDate(e.target.value)
+                    clearError('expiryDate')
+                  }}
+                  className="h-full bg-transparent px-3 outline-none"
+                />
+                <input
+                  type="time"
+                  aria-label="Custom expiry time"
+                  value={customTime}
+                  onChange={(e) => {
+                    setCustomTime(e.target.value)
+                    clearError('expiryDate')
+                  }}
+                  className="h-full bg-transparent pr-3 outline-none [&::-webkit-calendar-picker-indicator]:hidden"
+                />
+              </div>
+            )}
+          </div>
+          {errors.expiryDate && (
+            <p role="alert" className="mt-2 text-sm text-red-600 dark:text-red-400">
+              {errors.expiryDate}
+            </p>
+          )}
+        </fieldset>
+      </div>
     </form>
   )
 }
