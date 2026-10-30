@@ -3,9 +3,10 @@ import { useMutation } from '@tanstack/react-query'
 import { CalendarClock, Link2, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { ApiError, createShortUrl } from '../lib/api'
-import { addDays, toDateInputValue, toLocalDateTime } from '../lib/dates'
+import { addDays, parseTime, toDateInputValue, toLocalDateTime } from '../lib/dates'
 import { cx } from '../lib/cx'
 import { DatePicker } from './DatePicker'
+import { TimeInput } from './TimeInput'
 import { useNow } from '../hooks/useNow'
 import type { RecentLink } from '../hooks/useRecentLinks'
 
@@ -73,15 +74,20 @@ export function ShortenForm({ onCreated }: Props) {
     }
 
     if (preset === 'custom' && !customDate) {
-      setErrors({ expiryDate: 'Pick an expiry date' })
+      setErrors({ expiryDate: 'Enter or pick an expiry date' })
+      return
+    }
+
+    // An empty time means midnight; anything else must be a complete, valid time
+    const time = customTime === '' ? '00:00' : parseTime(customTime)
+    if (preset === 'custom' && !time) {
+      setErrors({ expiryDate: 'Enter a valid time (hh:mm)' })
       return
     }
 
     const selected = PRESETS.find((p) => p.id === preset)!
     const expiry =
-      selected.days !== null
-        ? addDays(new Date(), selected.days)
-        : new Date(`${customDate}T${customTime || '00:00'}`)
+      selected.days !== null ? addDays(new Date(), selected.days) : new Date(`${customDate}T${time}`)
     if (Number.isNaN(expiry.getTime()) || expiry <= new Date()) {
       setErrors({ expiryDate: 'Expiry must be in the future' })
       return
@@ -182,15 +188,13 @@ export function ShortenForm({ onCreated }: Props) {
                     clearError('expiryDate')
                   }}
                 />
-                <input
-                  type="time"
+                <TimeInput
                   aria-label="Custom expiry time"
                   value={customTime}
-                  onChange={(e) => {
-                    setCustomTime(e.target.value)
+                  onChange={(value) => {
+                    setCustomTime(value)
                     clearError('expiryDate')
                   }}
-                  className="h-full bg-transparent pr-3 outline-none [&::-webkit-calendar-picker-indicator]:hidden"
                 />
               </div>
             )}

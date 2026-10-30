@@ -18,6 +18,13 @@ export function parseDateInputValue(value: string): Date {
   return new Date(y, m - 1, d)
 }
 
+/** hh:mm -> hh:mm if it's a real 24-hour time, otherwise ''. */
+export function parseTime(text: string): string {
+  const match = /^(\d{2}):(\d{2})$/.exec(text)
+  if (!match) return ''
+  return Number(match[1]) < 24 && Number(match[2]) < 60 ? text : ''
+}
+
 export function addDays(date: Date, days: number): Date {
   const d = new Date(date)
   d.setDate(d.getDate() + days)

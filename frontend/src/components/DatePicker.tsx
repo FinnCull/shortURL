@@ -17,10 +17,32 @@ const WEEKDAYS = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su']
 const monthFormat = new Intl.DateTimeFormat(undefined, { month: 'long', year: 'numeric' })
 const fullDateFormat = new Intl.DateTimeFormat(undefined, { dateStyle: 'full' })
 
-/** dd/mm/yyyy */
+/** YYYY-MM-DD -> dd/mm/yyyy */
 function formatDisplay(value: string): string {
   const [y, m, d] = value.split('-')
   return `${d}/${m}/${y}`
+}
+
+/**
+ * Normalises typed input into a partial dd/mm/yyyy string. Slashes are added automatically,
+ * and a single-digit day or month followed by a separator is zero-padded ("5/" -> "05").
+ */
+function formatTyped(raw: string): string {
+  const parts = raw.split(/\D+/)
+  const digits = parts
+    .map((part, i) => (i < 2 && i < parts.length - 1 && part.length === 1 ? `0${part}` : part))
+    .join('')
+    .slice(0, 8)
+  return [digits.slice(0, 2), digits.slice(2, 4), digits.slice(4)].filter(Boolean).join('/')
+}
+
+/** dd/mm/yyyy -> YYYY-MM-DD, or '' if incomplete or not a real date (e.g. 31/02). */
+function parseTyped(text: string): string {
+  const match = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(text)
+  if (!match) return ''
+  const [, d, m, y] = match
+  const date = new Date(Number(y), Number(m) - 1, Number(d))
+  return date.getDate() === Number(d) && date.getMonth() === Number(m) - 1 ? `${y}-${m}-${d}` : ''
 }
 
 function startOfMonth(date: Date): Date {
@@ -50,9 +72,17 @@ function monthGrid(month: Date): Date[] {
 export function DatePicker({ value, onChange, min, 'aria-label': ariaLabel = 'Date' }: Props) {
   const [open, setOpen] = useState(false)
   const [focused, setFocused] = useState(() => new Date())
-  const triggerRef = useRef<HTMLButtonElement>(null)
+  const [text, setText] = useState(() => (value ? formatDisplay(value) : ''))
+  const [syncedValue, setSyncedValue] = useState(value)
+  const fieldRef = useRef<HTMLDivElement>(null)
+  const inputRef = useRef<HTMLInputElement>(null)
   const popoverRef = useRef<HTMLDivElement>(null)
   const gridRef = useRef<HTMLDivElement>(null)
+
+  if (value !== syncedValue) {
+    setSyncedValue(value)
+    if (value !== parseTyped(text)) setText(value ? formatDisplay(value) : '')
+  }
 
   const today = toDateInputValue(useNow())
   const isDisabled = (iso: string) => (min ? iso < min : false)
@@ -65,7 +95,7 @@ export function DatePicker({ value, onChange, min, 'aria-label': ariaLabel = 'Da
 
   const close = (restoreFocus = true) => {
     setOpen(false)
-    if (restoreFocus) triggerRef.current?.focus()
+    if (restoreFocus) inputRef.current?.focus()
   }
 
   const select = (iso: string) => {
@@ -79,7 +109,7 @@ export function DatePicker({ value, onChange, min, 'aria-label': ariaLabel = 'Da
     if (!open) return
     const onPointerDown = (e: PointerEvent) => {
       const target = e.target as Node
-      if (!popoverRef.current?.contains(target) && !triggerRef.current?.contains(target)) close(false)
+      if (!popoverRef.current?.contains(target) && !fieldRef.current?.contains(target)) close(false)
     }
     document.addEventListener('pointerdown', onPointerDown)
     return () => document.removeEventListener('pointerdown', onPointerDown)
@@ -115,18 +145,40 @@ export function DatePicker({ value, onChange, min, 'aria-label': ariaLabel = 'Da
 
   return (
     <>
-      <button
-        ref={triggerRef}
-        type="button"
-        onClick={() => (open ? close() : openCalendar())}
-        aria-haspopup="dialog"
-        aria-expanded={open}
-        aria-label={value ? `${ariaLabel}: ${fullDateFormat.format(parseDateInputValue(value))}` : ariaLabel}
-        className="flex h-full items-center gap-2 pl-3 pr-2 tabular-nums outline-none"
-      >
-        <span className={value ? undefined : 'text-zinc-400'}>{value ? formatDisplay(value) : 'dd/mm/yyyy'}</span>
-        <CalendarDays className="size-4 text-zinc-500 dark:text-zinc-400" />
-      </button>
+      <div ref={fieldRef} className="flex h-full items-center">
+        <input
+          ref={inputRef}
+          type="text"
+          inputMode="numeric"
+          autoComplete="off"
+          placeholder="dd/mm/yyyy"
+          aria-label={`${ariaLabel} (dd/mm/yyyy)`}
+          value={text}
+          onChange={(e) => {
+            const formatted = formatTyped(e.target.value)
+            setText(formatted)
+            const parsed = parseTyped(formatted)
+            if (parsed !== value) onChange(parsed)
+          }}
+          onKeyDown={(e) => {
+            if (e.key === 'ArrowDown' && e.altKey) {
+              e.preventDefault()
+              openCalendar()
+            }
+          }}
+          className="h-full w-[6.75rem] bg-transparent pl-3 tabular-nums outline-none placeholder:text-zinc-400"
+        />
+        <button
+          type="button"
+          onClick={() => (open ? close() : openCalendar())}
+          aria-haspopup="dialog"
+          aria-expanded={open}
+          aria-label={value ? `Open calendar, ${fullDateFormat.format(parseDateInputValue(value))} selected` : 'Open calendar'}
+          className="mr-1 rounded-md p-1 text-zinc-500 outline-none hover:bg-zinc-200/70 hover:text-zinc-900 focus-visible:ring-2 focus-visible:ring-red-500 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-100"
+        >
+          <CalendarDays className="size-4" />
+        </button>
+      </div>
 
       {open && (
         <div
