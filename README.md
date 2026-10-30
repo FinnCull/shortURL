@@ -18,6 +18,7 @@ A small URL shortening service built with Spring Boot. Submit a long `https://` 
 - Spring Boot 4 (Web MVC, Data JPA, Validation)
 - H2 in-memory database
 - JUnit 5 / Mockito / MockMvc for tests
+- Frontend: React 19, TypeScript, Vite, Tailwind CSS, TanStack Query
 
 ## Getting started
 
@@ -34,6 +35,18 @@ No Maven install needed; the project ships with the Maven wrapper.
 ```
 
 The service starts on `http://localhost:8080`.
+
+### Run the frontend
+
+Requires Node.js 20+. With the backend running:
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+Open `http://localhost:5173`. See [`frontend/README.md`](frontend/README.md) for details.
 
 ### Run the tests
 
@@ -115,6 +128,8 @@ src/main/java/com/github/finncull/urlshortener/
 ├── dto/                # Request DTOs with validation
 ├── exception/          # Domain exceptions
 └── exceptionhandler/   # Maps exceptions to HTTP responses
+
+frontend/               # React + Vite web UI
 ```
 
 ## Roadmap
