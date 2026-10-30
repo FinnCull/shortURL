@@ -9,7 +9,9 @@ import com.github.finncull.urlshortener.service.URLService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
+import org.springframework.dao.DataIntegrityViolationException;
 
 import java.time.LocalDateTime;
 import java.util.Optional;
@@ -17,6 +19,7 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -145,5 +148,32 @@ public class URLServiceTest {
         InvalidUrlException ex = assertThrows(InvalidUrlException.class, () ->
                 service.handleNewShortURLCreation("www.example.com", LocalDateTime.now().plusDays(1)));
         assertEquals("URL has no host", ex.getMessage());
+    }
+
+    @Test
+    public void handleNewShortURLCreation_retriesWithNewCodeOnCollision(){
+        URLRepository repo = Mockito.mock(URLRepository.class);
+        URLService service = new URLService(repo, APP_DOMAIN);
+        when(repo.save(any(URLMapping.class)))
+                .thenThrow(new DataIntegrityViolationException("duplicate key"))
+                .thenAnswer(inv -> inv.getArgument(0));
+
+        URLMapping mapping = service.handleNewShortURLCreation("http://8.8.8.8/", LocalDateTime.now().plusDays(1));
+
+        ArgumentCaptor<URLMapping> captor = ArgumentCaptor.forClass(URLMapping.class);
+        verify(repo, times(2)).save(captor.capture());
+        assertNotEquals(captor.getAllValues().get(0).getShortCode(), captor.getAllValues().get(1).getShortCode());
+        assertEquals(captor.getAllValues().get(1).getShortCode(), mapping.getShortCode());
+    }
+
+    @Test
+    public void handleNewShortURLCreation_givesUpAfterRepeatedCollisions(){
+        URLRepository repo = Mockito.mock(URLRepository.class);
+        URLService service = new URLService(repo, APP_DOMAIN);
+        when(repo.save(any(URLMapping.class))).thenThrow(new DataIntegrityViolationException("duplicate key"));
+
+        assertThrows(IllegalStateException.class, () ->
+                service.handleNewShortURLCreation("http://8.8.8.8/", LocalDateTime.now().plusDays(1)));
+        verify(repo, times(5)).save(any(URLMapping.class));
     }
 }
