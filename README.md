@@ -17,8 +17,7 @@ A small URL shortening service built with Spring Boot. Submit a long `https://` 
 - Java 21
 - Spring Boot 4 (Web MVC, Data JPA, Validation)
 - PostgreSQL 18 (via Docker Compose) with Flyway migrations
-- H2 in-memory database for tests
-- JUnit 5 / Mockito / MockMvc for tests
+- JUnit 5 / Mockito / MockMvc / Testcontainers for tests
 
 ## Getting started
 
@@ -50,7 +49,7 @@ To stop the database, run `docker compose down`. Data persists in the `pgdata` v
 ./mvnw test -Dtest=URLServiceTest#findCorrespondingURL_throwsWhenCodeMissing   # one method
 ```
 
-Tests run against an in-memory H2 database in PostgreSQL mode, so Docker doesn't need to be running.
+Repository and application-context tests start a throwaway `postgres:18` container with Testcontainers, so Docker must be running. The container is separate from the one in `compose.yaml` and is removed when the tests finish.
 
 > Note: `handleNewShortURLCreation_allowsPublicAddresses` performs real DNS lookups and requires network access.
 
