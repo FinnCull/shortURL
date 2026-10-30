@@ -161,20 +161,20 @@ export function ShortenForm({ onCreated }: Props) {
               {p.label}
             </button>
           ))}
+          {preset === 'custom' && (
+            <input
+              type="datetime-local"
+              aria-label="Custom expiry date"
+              value={customExpiry}
+              min={toDateTimeInputValue(now)}
+              onChange={(e) => {
+                setCustomExpiry(e.target.value)
+                clearError('expiryDate')
+              }}
+              className="rounded-lg border border-zinc-200 bg-zinc-50 px-3 text-sm outline-none focus:border-red-500 focus:ring-4 focus:ring-red-500/15 dark:border-zinc-700 dark:bg-zinc-950"
+            />
+          )}
         </div>
-        {preset === 'custom' && (
-          <input
-            type="datetime-local"
-            aria-label="Custom expiry date"
-            value={customExpiry}
-            min={toDateTimeInputValue(now)}
-            onChange={(e) => {
-              setCustomExpiry(e.target.value)
-              clearError('expiryDate')
-            }}
-            className="mt-3 h-10 rounded-lg border border-zinc-200 bg-zinc-50 px-3 text-sm outline-none focus:border-red-500 focus:ring-4 focus:ring-red-500/15 dark:border-zinc-700 dark:bg-zinc-950"
-          />
-        )}
         {errors.expiryDate && (
           <p role="alert" className="mt-2 text-sm text-red-600 dark:text-red-400">
             {errors.expiryDate}
