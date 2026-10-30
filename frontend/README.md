@@ -4,7 +4,7 @@ React + TypeScript single-page app for the URL shortener, built with Vite and st
 
 ## Development
 
-Start the backend first (`./mvnw spring-boot:run` from the repo root), then:
+Requires Node.js 20.19+ or 22.12+. Start the backend first (`./mvnw spring-boot:run` from the repo root), then:
 
 ```bash
 npm install
@@ -26,7 +26,8 @@ Vite proxies `/createURL` to `http://localhost:8080` (see `vite.config.ts`), so 
 
 ```
 src/
-├── components/   # UI: ShortenForm, ResultCard, RecentLinks, CopyButton, ThemeToggle
+├── components/   # UI: HeroCut, ShortenForm, DatePicker, TimeInput, ResultCard,
+│                 #     RecentLinks, CopyButton, ThemeToggle
 ├── hooks/        # useRecentLinks, useLocalStorage, useTheme, useNow
 ├── lib/          # API client, date helpers, class-name helper
 ├── App.tsx       # Page layout

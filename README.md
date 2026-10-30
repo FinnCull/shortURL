@@ -38,7 +38,7 @@ The service starts on `http://localhost:8080`.
 
 ### Run the frontend
 
-Requires Node.js 20+. With the backend running:
+Requires Node.js 20.19+ or 22.12+. With the backend running:
 
 ```bash
 cd frontend
