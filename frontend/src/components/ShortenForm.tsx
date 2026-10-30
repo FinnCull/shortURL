@@ -3,8 +3,9 @@ import { useMutation } from '@tanstack/react-query'
 import { CalendarClock, Link2, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { ApiError, createShortUrl } from '../lib/api'
-import { addDays, toDateTimeInputValue, toLocalDateTime } from '../lib/dates'
+import { addDays, toDateInputValue, toLocalDateTime } from '../lib/dates'
 import { cx } from '../lib/cx'
+import { DatePicker } from './DatePicker'
 import { useNow } from '../hooks/useNow'
 import type { RecentLink } from '../hooks/useRecentLinks'
 
@@ -94,7 +95,7 @@ export function ShortenForm({ onCreated }: Props) {
     <form
       onSubmit={submit}
       noValidate
-      className="fade-card p-5 sm:p-6"
+      className="fade-card z-10 p-5 sm:p-6"
     >
       <label htmlFor="url" className="mb-2 block text-sm font-medium">
         Long URL
@@ -171,17 +172,15 @@ export function ShortenForm({ onCreated }: Props) {
               </button>
             ))}
             {preset === 'custom' && (
-              <div className="ml-auto flex items-center rounded-lg border border-zinc-200 bg-zinc-50 text-sm transition focus-within:border-red-500 focus-within:ring-4 focus-within:ring-red-500/15 dark:border-zinc-700 dark:bg-zinc-950">
-                <input
-                  type="date"
+              <div className="relative ml-auto flex items-center rounded-lg border border-zinc-200 bg-zinc-50 text-sm transition focus-within:border-red-500 focus-within:ring-4 focus-within:ring-red-500/15 dark:border-zinc-700 dark:bg-zinc-950">
+                <DatePicker
                   aria-label="Custom expiry date"
                   value={customDate}
-                  min={toDateTimeInputValue(now).slice(0, 10)}
-                  onChange={(e) => {
-                    setCustomDate(e.target.value)
+                  min={toDateInputValue(now)}
+                  onChange={(value) => {
+                    setCustomDate(value)
                     clearError('expiryDate')
                   }}
-                  className="h-full bg-transparent px-3 outline-none"
                 />
                 <input
                   type="time"

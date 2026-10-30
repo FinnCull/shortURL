@@ -7,9 +7,15 @@ export function toLocalDateTime(date: Date): string {
   )
 }
 
-/** Value for a <input type="datetime-local">, which has minute precision. */
-export function toDateTimeInputValue(date: Date): string {
-  return toLocalDateTime(date).slice(0, 16)
+/** Value for a <input type="date"> or a date-only string: YYYY-MM-DD in local time. */
+export function toDateInputValue(date: Date): string {
+  return toLocalDateTime(date).slice(0, 10)
+}
+
+/** Parses YYYY-MM-DD as local midnight (new Date('YYYY-MM-DD') would use UTC). */
+export function parseDateInputValue(value: string): Date {
+  const [y, m, d] = value.split('-').map(Number)
+  return new Date(y, m - 1, d)
 }
 
 export function addDays(date: Date, days: number): Date {
