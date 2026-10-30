@@ -5,7 +5,7 @@ A small URL shortening service built with Spring Boot. Submit a long `https://` 
 ## Features
 
 - Random 10-character short codes (`[A-Za-z0-9]`) generated with `SecureRandom`
-- Per-link expiry dates; expired links return `410 Gone`
+- Optional per-link expiry dates; expired links return `410 Gone`
 - URL validation on creation:
   - must be a well-formed `https://` URL with a host
   - links pointing back to this service are rejected
@@ -18,6 +18,7 @@ A small URL shortening service built with Spring Boot. Submit a long `https://` 
 - Spring Boot 4 (Web MVC, Data JPA, Validation)
 - H2 in-memory database
 - JUnit 5 / Mockito / MockMvc for tests
+- Frontend: React 19, TypeScript, Vite, Tailwind CSS, TanStack Query
 
 ## Getting started
 
@@ -34,6 +35,18 @@ No Maven install needed; the project ships with the Maven wrapper.
 ```
 
 The service starts on `http://localhost:8080`.
+
+### Run the frontend
+
+Requires Node.js 20.19+ or 22.12+. With the backend running:
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+Open `http://localhost:5173`. See [`frontend/README.md`](frontend/README.md) for details.
 
 ### Run the tests
 
@@ -60,7 +73,7 @@ curl -i -X POST http://localhost:8080/createURL \
 | Field         | Type                          | Rules                         |
 |---------------|-------------------------------|-------------------------------|
 | `originalUrl` | string                        | required, valid `https://` URL |
-| `expiryDate`  | ISO-8601 local date-time      | required, must be in the future |
+| `expiryDate`  | ISO-8601 local date-time      | optional, must be in the future; omit or `null` for a link that never expires |
 
 **Responses**
 
@@ -115,6 +128,8 @@ src/main/java/com/github/finncull/urlshortener/
 ├── dto/                # Request DTOs with validation
 ├── exception/          # Domain exceptions
 └── exceptionhandler/   # Maps exceptions to HTTP responses
+
+frontend/               # React + Vite web UI
 ```
 
 ## Roadmap

@@ -59,7 +59,8 @@ public class URLService {
         Optional<URLMapping> urlMappingOptional = repository.findById(shortCode);
         URLMapping urlMapping = urlMappingOptional.orElseThrow(() -> new ShortCodeNotFoundException(shortCode));
 
-        if(urlMapping.getExpiryDate().isBefore(LocalDateTime.now())){
+        LocalDateTime expiryDate = urlMapping.getExpiryDate();
+        if(expiryDate != null && expiryDate.isBefore(LocalDateTime.now())){
             throw new LinkExpiredException(shortCode);
         }
         else{

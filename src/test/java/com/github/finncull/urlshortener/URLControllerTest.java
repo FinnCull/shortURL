@@ -18,6 +18,7 @@ import java.time.LocalDateTime;
 import static org.hamcrest.Matchers.containsString;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -115,6 +116,23 @@ public class URLControllerTest {
                         .content(body))
                 .andExpect(status().isCreated())
                 .andExpect(header().string("Location", "http://localhost:8080/abc1234"))
+                .andExpect(content().string("http://localhost:8080/abc1234"));
+    }
+
+    @Test
+    void create_returns201WhenExpiryOmitted() throws Exception {
+        String body = """
+                {
+                   "originalUrl": "https://www.example.com"
+                }
+                """;
+        when(urlService.handleNewShortURLCreation(eq("https://www.example.com"), isNull()))
+                .thenReturn(new URLMapping("abc1234", "https://www.example.com", null));
+
+        mockMvc.perform(post("/createURL")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isCreated())
                 .andExpect(content().string("http://localhost:8080/abc1234"));
     }
 }
