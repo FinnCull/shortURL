@@ -54,6 +54,17 @@ public class URLServiceTest {
     }
 
     @Test
+    public void findCorrespondingUrl_returnsUrlWhenNoExpiry(){
+        URLRepository repo = Mockito.mock(URLRepository.class);
+        URLMapping permanentMapping = new URLMapping("abc123","www.example.com", null);
+        URLService service = new URLService(repo, APP_DOMAIN);
+
+        when(repo.findById("abc123")).thenReturn(Optional.of(permanentMapping));
+
+        assertEquals("www.example.com", service.findCorrespondingURL("abc123"));
+    }
+
+    @Test
     public void findCorrespondingURL_throwsWhenCodeMissing(){
         URLRepository repo = Mockito.mock(URLRepository.class);
         URLService service = new URLService(repo, APP_DOMAIN);

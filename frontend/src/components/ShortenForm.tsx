@@ -14,6 +14,7 @@ const PRESETS = [
   { id: '1d', label: '1 day', days: 1 },
   { id: '7d', label: '1 week', days: 7 },
   { id: '30d', label: '1 month', days: 30 },
+  { id: 'never', label: 'Never', days: null },
   { id: 'custom', label: 'Custom', days: null },
 ] as const
 
@@ -52,7 +53,7 @@ export function ShortenForm({ onCreated }: Props) {
         shortUrl,
         originalUrl: request.originalUrl,
         createdAt: new Date().toISOString(),
-        expiresAt: new Date(request.expiryDate).toISOString(),
+        expiresAt: request.expiryDate ? new Date(request.expiryDate).toISOString() : null,
       })
       setUrl('')
       setErrors({})
@@ -70,6 +71,13 @@ export function ShortenForm({ onCreated }: Props) {
     e.preventDefault()
     if (!url.trim()) {
       setErrors({ originalUrl: 'Enter a URL to shorten' })
+      return
+    }
+
+    const originalUrl = normaliseUrl(url)
+    if (preset === 'never') {
+      setErrors({})
+      mutation.mutate({ originalUrl, expiryDate: null })
       return
     }
 
@@ -94,7 +102,7 @@ export function ShortenForm({ onCreated }: Props) {
     }
 
     setErrors({})
-    mutation.mutate({ originalUrl: normaliseUrl(url), expiryDate: toLocalDateTime(expiry) })
+    mutation.mutate({ originalUrl, expiryDate: toLocalDateTime(expiry) })
   }
 
   return (

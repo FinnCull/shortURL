@@ -17,8 +17,8 @@ export class ApiError extends Error {
 
 export interface CreateUrlRequest {
   originalUrl: string
-  /** ISO-8601 local date-time, e.g. 2027-01-01T00:00:00 */
-  expiryDate: string
+  /** ISO-8601 local date-time, e.g. 2027-01-01T00:00:00, or null for a link that never expires */
+  expiryDate: string | null
 }
 
 export async function createShortUrl(request: CreateUrlRequest): Promise<string> {

@@ -5,7 +5,7 @@ A small URL shortening service built with Spring Boot. Submit a long `https://` 
 ## Features
 
 - Random 10-character short codes (`[A-Za-z0-9]`) generated with `SecureRandom`
-- Per-link expiry dates; expired links return `410 Gone`
+- Optional per-link expiry dates; expired links return `410 Gone`
 - URL validation on creation:
   - must be a well-formed `https://` URL with a host
   - links pointing back to this service are rejected
@@ -73,7 +73,7 @@ curl -i -X POST http://localhost:8080/createURL \
 | Field         | Type                          | Rules                         |
 |---------------|-------------------------------|-------------------------------|
 | `originalUrl` | string                        | required, valid `https://` URL |
-| `expiryDate`  | ISO-8601 local date-time      | required, must be in the future |
+| `expiryDate`  | ISO-8601 local date-time      | optional, must be in the future; omit or `null` for a link that never expires |
 
 **Responses**
 

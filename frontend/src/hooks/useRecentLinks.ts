@@ -4,9 +4,9 @@ import { useLocalStorage } from './useLocalStorage'
 export interface RecentLink {
   shortUrl: string
   originalUrl: string
-  /** ISO timestamps */
+  /** ISO timestamps; expiresAt is null for links that never expire */
   createdAt: string
-  expiresAt: string
+  expiresAt: string | null
 }
 
 const MAX_LINKS = 20

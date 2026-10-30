@@ -73,9 +73,13 @@ export function ResultCard({ link, onDismiss }: Props) {
         </div>
         <div className="flex gap-2">
           <dt>Expires</dt>
-          <dd className="text-zinc-900 dark:text-zinc-200" title={new Date(link.expiresAt).toLocaleString()}>
-            {formatRelative(new Date(link.expiresAt), now)}
-          </dd>
+          {link.expiresAt ? (
+            <dd className="text-zinc-900 dark:text-zinc-200" title={new Date(link.expiresAt).toLocaleString()}>
+              {formatRelative(new Date(link.expiresAt), now)}
+            </dd>
+          ) : (
+            <dd className="text-zinc-900 dark:text-zinc-200">Never</dd>
+          )}
         </div>
       </dl>
 

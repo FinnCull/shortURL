@@ -32,8 +32,8 @@ export function RecentLinks({ links, onRemove, onClear }: Props) {
 
       <ul className="divide-y divide-zinc-200 overflow-hidden rounded-2xl border border-zinc-200 bg-white dark:divide-zinc-800 dark:border-zinc-800 dark:bg-zinc-900">
         {links.map((link) => {
-          const expiresAt = new Date(link.expiresAt)
-          const expired = expiresAt <= now
+          const expiresAt = link.expiresAt ? new Date(link.expiresAt) : null
+          const expired = expiresAt !== null && expiresAt <= now
           return (
             <li key={link.shortUrl} className="group flex items-center gap-3 px-4 py-3">
               <div className="min-w-0 flex-1">
@@ -52,7 +52,7 @@ export function RecentLinks({ links, onRemove, onClear }: Props) {
                     {link.shortUrl.replace(/^https?:\/\//, '')}
                   </a>
                   <span
-                    title={expiresAt.toLocaleString()}
+                    title={expiresAt?.toLocaleString()}
                     className={cx(
                       'shrink-0 rounded-full px-2 py-0.5 text-xs font-medium',
                       expired
@@ -60,7 +60,11 @@ export function RecentLinks({ links, onRemove, onClear }: Props) {
                         : 'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400',
                     )}
                   >
-                    {expired ? 'Expired' : `Expires ${formatRelative(expiresAt, now)}`}
+                    {expiresAt === null
+                      ? 'Never expires'
+                      : expired
+                        ? 'Expired'
+                        : `Expires ${formatRelative(expiresAt, now)}`}
                   </span>
                 </div>
                 <p className="truncate text-sm text-zinc-500 dark:text-zinc-400" title={link.originalUrl}>
