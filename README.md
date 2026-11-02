@@ -16,24 +16,30 @@ A small URL shortening service built with Spring Boot. Submit a long `https://` 
 
 - Java 21
 - Spring Boot 4 (Web MVC, Data JPA, Validation)
-- H2 in-memory database
-- JUnit 5 / Mockito / MockMvc for tests
+- PostgreSQL 18 (via Docker Compose) with Flyway migrations
+- JUnit 5 / Mockito / MockMvc / Testcontainers for tests
 
 ## Getting started
 
 ### Prerequisites
 
 - JDK 21 (`java -version` to check)
+- Docker with Docker Compose (for the PostgreSQL database)
 
 No Maven install needed; the project ships with the Maven wrapper.
 
 ### Run the app
 
+Start PostgreSQL, then the app:
+
 ```bash
+docker compose up -d
 ./mvnw spring-boot:run
 ```
 
-The service starts on `http://localhost:8080`.
+The service starts on `http://localhost:8080`. Flyway applies any pending migrations on startup.
+
+To stop the database, run `docker compose down`. Data persists in the `pgdata` volume; `docker compose down -v` wipes it.
 
 ### Run the tests
 
@@ -42,6 +48,8 @@ The service starts on `http://localhost:8080`.
 ./mvnw test -Dtest=URLServiceTest             # one class
 ./mvnw test -Dtest=URLServiceTest#findCorrespondingURL_throwsWhenCodeMissing   # one method
 ```
+
+Repository and application-context tests start a throwaway `postgres:18` container with Testcontainers, so Docker must be running. The container is separate from the one in `compose.yaml` and is removed when the tests finish.
 
 > Note: `handleNewShortURLCreation_allowsPublicAddresses` performs real DNS lookups and requires network access.
 
@@ -95,14 +103,21 @@ curl -i http://localhost:8080/aB3dE5fG7h
 
 Set in `src/main/resources/application.properties`:
 
-| Property       | Default                  | Description                                          |
-|----------------|--------------------------|------------------------------------------------------|
-| `app.base-url` | `http://localhost:8080/` | Prefix used to build returned short URLs             |
-| `app.domain`   | `localhost`              | This service's domain; URLs pointing here are rejected |
+| Property                     | Default                                         | Description                                            |
+|------------------------------|-------------------------------------------------|--------------------------------------------------------|
+| `spring.datasource.url`      | `jdbc:postgresql://localhost:5432/urlshortener` | Database URL; override with the `DB_URL` env var       |
+| `spring.datasource.username` | `urlshortener`                                  | Database user; override with `DB_USERNAME`             |
+| `spring.datasource.password` | `urlshortener`                                  | Database password; override with `DB_PASSWORD`         |
+| `app.base-url`               | `http://localhost:8080/`                        | Prefix used to build returned short URLs               |
+| `app.domain`                 | `localhost`                                     | This service's domain; URLs pointing here are rejected |
 
-The H2 console is available at `http://localhost:8080/h2-console` (JDBC URL `jdbc:h2:mem:urlshortener`, user `sa`, no password).
+The defaults match the database defined in `compose.yaml`.
 
-> Data is stored in memory and is lost when the app restarts.
+## Database migrations
+
+The schema is managed by Flyway. Migrations live in `src/main/resources/db/migration` and are named `V<version>__<description>.sql` (e.g. `V2__add_click_count.sql`). Hibernate runs with `ddl-auto=validate`, so it checks the entities against the schema but never changes it. Every schema change needs a new migration.
+
+Never edit a migration that has already been applied; add a new one instead.
 
 ## Project structure
 
@@ -119,7 +134,7 @@ src/main/java/com/github/finncull/urlshortener/
 
 ## Roadmap
 
-- [ ] Persistent database (PostgreSQL + Flyway)
+- [x] Persistent database (PostgreSQL + Flyway)
 - [ ] Scheduled cleanup of expired links
 - [ ] Custom aliases
 - [ ] Click analytics
