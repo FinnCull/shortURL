@@ -18,6 +18,7 @@ import java.time.LocalDateTime;
 import static org.hamcrest.Matchers.containsString;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -106,6 +107,27 @@ public class URLControllerTest {
                 .andExpect(jsonPath("$.errors.length()").value(1))
                 .andExpect(jsonPath("$.errors[0].field").value("originalUrl"))
                 .andExpect(jsonPath("$.errors[0].message").value("Url points to a private or internal address"));
+    }
+
+    @Test
+    void create_returns400WhenExpiryDateIsInThePast() throws Exception {
+        String yesterday = LocalDateTime.now().minusDays(1).toString();
+        String body = """
+                {
+                   "originalUrl": "https://www.example.com",
+                   "expiryDate": "%s"
+                }
+                """.formatted(yesterday);
+
+        mockMvc.perform(post("/createURL")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
+                .andExpect(jsonPath("$.errors.length()").value(1))
+                .andExpect(jsonPath("$.errors[0].field").value("expiryDate"))
+                .andExpect(jsonPath("$.errors[0].message").value("must be a future date"));
+        verifyNoInteractions(urlService);
     }
 
     @Test

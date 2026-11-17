@@ -151,6 +151,18 @@ public class URLServiceTest {
     }
 
     @Test
+    public void handleNewShortURLCreation_rejectsUnresolvableHost(){
+        URLRepository repo = Mockito.mock(URLRepository.class);
+        URLService service = new URLService(repo, APP_DOMAIN);
+
+        // .invalid is reserved by RFC 2606 and guaranteed never to resolve
+        InvalidUrlException ex = assertThrows(InvalidUrlException.class, () ->
+                service.handleNewShortURLCreation("https://nothing.invalid", LocalDateTime.now().plusDays(1)));
+        assertEquals("host does not resolve", ex.getMessage());
+        verify(repo, never()).save(any(URLMapping.class));
+    }
+
+    @Test
     public void handleNewShortURLCreation_retriesWithNewCodeOnCollision(){
         URLRepository repo = Mockito.mock(URLRepository.class);
         URLService service = new URLService(repo, APP_DOMAIN);
