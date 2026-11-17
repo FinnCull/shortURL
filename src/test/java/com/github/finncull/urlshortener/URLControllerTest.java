@@ -38,7 +38,11 @@ public class URLControllerTest {
 
         mockMvc.perform(get("/abc123"))
                 .andExpect(status().isNotFound())
-                .andExpect(content().string(containsString("abc123")));
+                .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
+                .andExpect(jsonPath("$.status").value(404))
+                .andExpect(jsonPath("$.title").value("Not Found"))
+                .andExpect(jsonPath("$.detail").value(containsString("abc123")))
+                .andExpect(jsonPath("$.instance").value("/abc123"));
     }
 
     @Test
@@ -47,7 +51,9 @@ public class URLControllerTest {
 
         mockMvc.perform(get("/abc123"))
                 .andExpect(status().isGone())
-                .andExpect(content().string("This link has expired - abc123"));
+                .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
+                .andExpect(jsonPath("$.status").value(410))
+                .andExpect(jsonPath("$.detail").value("This link has expired - abc123"));
     }
 
     @Test
@@ -72,6 +78,8 @@ public class URLControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body))
                 .andExpect(status().isBadRequest())
+                .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
+                .andExpect(jsonPath("$.status").value(400))
                 .andExpect(jsonPath("$.errors.length()").value(1))
                 .andExpect(jsonPath("$.errors[0].field").value("originalUrl"))
                 .andExpect(jsonPath("$.errors[0].message").value("must be a valid https:// URL"));
@@ -93,9 +101,47 @@ public class URLControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body))
                 .andExpect(status().isBadRequest())
+                .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
+                .andExpect(jsonPath("$.status").value(400))
                 .andExpect(jsonPath("$.errors.length()").value(1))
                 .andExpect(jsonPath("$.errors[0].field").value("originalUrl"))
                 .andExpect(jsonPath("$.errors[0].message").value("Url points to a private or internal address"));
+    }
+
+    @Test
+    void create_returns400WhenBodyIsUnreadable() throws Exception {
+        String body = """
+                {
+                   "originalUrl": "https://www.example.com",
+                   "expiryDate": "not-a-date"
+                }
+                """;
+
+        mockMvc.perform(post("/createURL")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
+                .andExpect(jsonPath("$.status").value(400));
+    }
+
+    @Test
+    void create_returns500WithoutLeakingInternalsWhenUnexpectedErrorOccurs() throws Exception {
+        String body = """
+                {
+                   "originalUrl": "https://www.example.com",
+                   "expiryDate": "%s"
+                }
+                """.formatted(LocalDateTime.now().plusDays(1));
+        when(urlService.handleNewShortURLCreation(eq("https://www.example.com"), any(LocalDateTime.class)))
+                .thenThrow(new IllegalStateException("Could not generate a unique short code after 3 attempts"));
+
+        mockMvc.perform(post("/createURL")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isInternalServerError())
+                .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
+                .andExpect(jsonPath("$.detail").value("An unexpected error occurred"));
     }
 
     @Test

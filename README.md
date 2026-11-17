@@ -10,7 +10,7 @@ A small URL shortening service built with Spring Boot. Submit a long `https://` 
   - must be a well-formed `https://` URL with a host
   - links pointing back to this service are rejected
   - hosts resolving to private, loopback, link-local or other internal addresses are rejected
-- Structured JSON validation errors
+- Consistent JSON errors in [RFC 9457](https://www.rfc-editor.org/rfc/rfc9457) Problem Details format (`application/problem+json`)
 
 ## Tech stack
 
@@ -68,9 +68,13 @@ curl -i -X POST http://localhost:8080/createURL \
   ```
   http://localhost:8080/aB3dE5fG7h
   ```
-- `400 Bad Request`: validation failure
+- `400 Bad Request`: validation failure, or a body that isn't valid JSON / has an unparseable date
   ```json
   {
+    "title": "Bad Request",
+    "status": 400,
+    "detail": "Request validation failed",
+    "instance": "/createURL",
     "errors": [
       { "field": "originalUrl", "message": "must be a valid https:// URL" }
     ]
@@ -90,6 +94,19 @@ curl -i http://localhost:8080/aB3dE5fG7h
 | `302 Found`     | Redirects to the original URL (`Location` header) |
 | `404 Not Found` | No link exists for that code                    |
 | `410 Gone`      | The link has expired                            |
+
+### Errors
+
+Every error response uses the Problem Details format with `Content-Type: application/problem+json`. Validation errors add an `errors` array (shown above). Unexpected server errors return `500` with a generic `detail`; the cause is logged, never returned to the client.
+
+```json
+{
+  "title": "Not Found",
+  "status": 404,
+  "detail": "No mapping found for short code: aB3dE5fG7h",
+  "instance": "/aB3dE5fG7h"
+}
+```
 
 ## Configuration
 
