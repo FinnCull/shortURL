@@ -47,12 +47,12 @@ The service starts on `http://localhost:8080`.
 
 ## API
 
-### Create a short URL
+### Create a short link
 
-`POST /createURL`
+`POST /api/links`
 
 ```bash
-curl -i -X POST http://localhost:8080/createURL \
+curl -i -X POST http://localhost:8080/api/links \
   -H "Content-Type: application/json" \
   -d '{"originalUrl": "https://example.com/some/long/path", "expiryDate": "2027-01-01T00:00:00"}'
 ```
@@ -64,9 +64,14 @@ curl -i -X POST http://localhost:8080/createURL \
 
 **Responses**
 
-- `201 Created`: body is the short URL (plain string), also set in the `Location` header
-  ```
-  http://localhost:8080/aB3dE5fG7h
+- `201 Created`: `Location` header points to the created link resource (`/api/links/{shortCode}`); the body describes the link, and `shortUrl` is the URL to share
+  ```json
+  {
+    "shortCode": "aB3dE5fG7h",
+    "shortUrl": "http://localhost:8080/aB3dE5fG7h",
+    "originalUrl": "https://example.com/some/long/path",
+    "expiryDate": "2027-01-01T00:00:00"
+  }
   ```
 - `400 Bad Request`: validation failure, or a body that isn't valid JSON / has an unparseable date
   ```json
@@ -74,7 +79,7 @@ curl -i -X POST http://localhost:8080/createURL \
     "title": "Bad Request",
     "status": 400,
     "detail": "Request validation failed",
-    "instance": "/createURL",
+    "instance": "/api/links",
     "errors": [
       { "field": "originalUrl", "message": "must be a valid https:// URL" }
     ]

@@ -75,7 +75,7 @@ public class URLControllerTest {
                    "expiryDate": "%s"
                 }
                 """.formatted(tomorrowDate);
-        mockMvc.perform(post("/createURL")
+        mockMvc.perform(post("/api/links")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body))
                 .andExpect(status().isBadRequest())
@@ -98,7 +98,7 @@ public class URLControllerTest {
         when(urlService.handleNewShortURLCreation(eq("https://10.0.0.1"), any(LocalDateTime.class)))
                 .thenThrow(new InvalidUrlException("Url points to a private or internal address"));
 
-        mockMvc.perform(post("/createURL")
+        mockMvc.perform(post("/api/links")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body))
                 .andExpect(status().isBadRequest())
@@ -119,7 +119,7 @@ public class URLControllerTest {
                 }
                 """.formatted(yesterday);
 
-        mockMvc.perform(post("/createURL")
+        mockMvc.perform(post("/api/links")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body))
                 .andExpect(status().isBadRequest())
@@ -139,7 +139,7 @@ public class URLControllerTest {
                 }
                 """;
 
-        mockMvc.perform(post("/createURL")
+        mockMvc.perform(post("/api/links")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body))
                 .andExpect(status().isBadRequest())
@@ -158,7 +158,7 @@ public class URLControllerTest {
         when(urlService.handleNewShortURLCreation(eq("https://www.example.com"), any(LocalDateTime.class)))
                 .thenThrow(new IllegalStateException("Could not generate a unique short code after 3 attempts"));
 
-        mockMvc.perform(post("/createURL")
+        mockMvc.perform(post("/api/links")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body))
                 .andExpect(status().isInternalServerError())
@@ -167,22 +167,26 @@ public class URLControllerTest {
     }
 
     @Test
-    void create_returns201WithShortUrl() throws Exception {
-        LocalDateTime tomorrow = LocalDateTime.now().plusDays(1);
+    void create_returns201WithLinkJsonAndLocationOfApiResource() throws Exception {
+        LocalDateTime expiry = LocalDateTime.of(2030, 1, 1, 12, 0);
         String body = """
                 {
                    "originalUrl": "https://www.example.com",
                    "expiryDate": "%s"
                 }
-                """.formatted(tomorrow);
+                """.formatted(expiry);
         when(urlService.handleNewShortURLCreation(eq("https://www.example.com"), any(LocalDateTime.class)))
-                .thenReturn(new URLMapping("abc1234", "https://www.example.com", tomorrow));
+                .thenReturn(new URLMapping("abc1234", "https://www.example.com", expiry));
 
-        mockMvc.perform(post("/createURL")
+        mockMvc.perform(post("/api/links")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body))
                 .andExpect(status().isCreated())
-                .andExpect(header().string("Location", "http://localhost:8080/abc1234"))
-                .andExpect(content().string("http://localhost:8080/abc1234"));
+                .andExpect(header().string("Location", "http://localhost/api/links/abc1234"))
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.shortCode").value("abc1234"))
+                .andExpect(jsonPath("$.shortUrl").value("http://localhost:8080/abc1234"))
+                .andExpect(jsonPath("$.originalUrl").value("https://www.example.com"))
+                .andExpect(jsonPath("$.expiryDate").value("2030-01-01T12:00:00"));
     }
 }

@@ -1,20 +1,23 @@
 package com.github.finncull.urlshortener.controller;
 
 import com.github.finncull.urlshortener.dto.CreateUrlRequest;
+import com.github.finncull.urlshortener.dto.LinkResponse;
+import com.github.finncull.urlshortener.model.URLMapping;
 import com.github.finncull.urlshortener.service.URLService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.net.URI;
 
-@Controller
+@RestController
 public class URLController {
 
     private final URLService service;
@@ -31,12 +34,22 @@ public class URLController {
         return ResponseEntity.status(HttpStatus.FOUND).location(URI.create(url)).build();
     }
 
-    @PostMapping("/createURL")
-    public ResponseEntity<String> createShortURL(@Valid @RequestBody CreateUrlRequest request){
-        String shortCode = service.handleNewShortURLCreation(request.originalUrl(),request.expiryDate()).getShortCode();
-        String shortUrl = baseUrl + shortCode;
-        return ResponseEntity.status(HttpStatus.CREATED).location(URI.create(shortUrl)).body(shortUrl);
+    @PostMapping("/api/links")
+    public ResponseEntity<LinkResponse> createLink(@Valid @RequestBody CreateUrlRequest request){
+        URLMapping mapping = service.handleNewShortURLCreation(request.originalUrl(), request.expiryDate());
+        // Location identifies the created API resource; the short URL people share is in the body.
+        URI location = ServletUriComponentsBuilder.fromCurrentRequest()
+                .path("/{shortCode}")
+                .buildAndExpand(mapping.getShortCode())
+                .toUri();
+        return ResponseEntity.created(location).body(toResponse(mapping));
     }
 
-
+    private LinkResponse toResponse(URLMapping mapping){
+        return new LinkResponse(
+                mapping.getShortCode(),
+                baseUrl + mapping.getShortCode(),
+                mapping.getOriginalUrl(),
+                mapping.getExpiryDate());
+    }
 }
