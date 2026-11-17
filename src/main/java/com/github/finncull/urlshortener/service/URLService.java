@@ -22,7 +22,7 @@ import java.util.Optional;
 public class URLService {
     private final URLRepository repository;
     private static final int CODELENGTH = 10;
-    private static final int MAX_CODE_ATTEMPTS = 5;
+    private static final int MAX_CODE_ATTEMPTS = 3;
     private static final String ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
     private final SecureRandom secureRandom = new SecureRandom();
     private final String appDomain;

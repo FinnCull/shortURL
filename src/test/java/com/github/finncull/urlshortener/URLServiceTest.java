@@ -174,6 +174,6 @@ public class URLServiceTest {
 
         assertThrows(IllegalStateException.class, () ->
                 service.handleNewShortURLCreation("http://8.8.8.8/", LocalDateTime.now().plusDays(1)));
-        verify(repo, times(5)).save(any(URLMapping.class));
+        verify(repo, times(3)).save(any(URLMapping.class));
     }
 }
