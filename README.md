@@ -86,6 +86,19 @@ curl -i -X POST http://localhost:8080/api/links \
   }
   ```
 
+### Get a link
+
+`GET /api/links/{shortCode}`
+
+```bash
+curl -i http://localhost:8080/api/links/aB3dE5fG7h
+```
+
+| Status          | Meaning                                                        |
+|-----------------|----------------------------------------------------------------|
+| `200 OK`        | The link, in the same JSON shape as the create response. Expired links are still returned; check `expiryDate`. |
+| `404 Not Found` | No link exists for that code                                   |
+
 ### Follow a short URL
 
 `GET /{shortCode}`

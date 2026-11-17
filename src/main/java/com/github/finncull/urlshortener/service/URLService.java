@@ -16,7 +16,6 @@ import java.net.UnknownHostException;
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.Locale;
-import java.util.Optional;
 
 @Service
 public class URLService {
@@ -55,9 +54,14 @@ public class URLService {
         throw new IllegalStateException("Could not generate a unique short code after " + MAX_CODE_ATTEMPTS + " attempts");
     }
 
+    /** Returns the link whether or not it has expired; expiry only matters when following it. */
+    public URLMapping findLink(String shortCode){
+        return repository.findById(shortCode)
+                .orElseThrow(() -> new ShortCodeNotFoundException(shortCode));
+    }
+
     public String findCorrespondingURL(String shortCode){
-        Optional<URLMapping> urlMappingOptional = repository.findById(shortCode);
-        URLMapping urlMapping = urlMappingOptional.orElseThrow(() -> new ShortCodeNotFoundException(shortCode));
+        URLMapping urlMapping = findLink(shortCode);
 
         if(urlMapping.getExpiryDate().isBefore(LocalDateTime.now())){
             throw new LinkExpiredException(shortCode);

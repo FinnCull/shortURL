@@ -34,6 +34,11 @@ public class URLController {
         return ResponseEntity.status(HttpStatus.FOUND).location(URI.create(url)).build();
     }
 
+    @GetMapping("/api/links/{shortCode}")
+    public ResponseEntity<LinkResponse> getLink(@PathVariable String shortCode){
+        return ResponseEntity.ok(toResponse(service.findLink(shortCode)));
+    }
+
     @PostMapping("/api/links")
     public ResponseEntity<LinkResponse> createLink(@Valid @RequestBody CreateUrlRequest request){
         URLMapping mapping = service.handleNewShortURLCreation(request.originalUrl(), request.expiryDate());

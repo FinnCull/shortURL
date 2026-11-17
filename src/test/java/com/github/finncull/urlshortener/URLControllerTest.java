@@ -67,6 +67,30 @@ public class URLControllerTest {
     }
 
     @Test
+    void getLink_returns200WithLinkJsonEvenWhenExpired() throws Exception {
+        LocalDateTime expired = LocalDateTime.of(2020, 1, 1, 12, 0);
+        when(urlService.findLink("abc1234")).thenReturn(new URLMapping("abc1234", "https://www.example.com", expired));
+
+        mockMvc.perform(get("/api/links/abc1234"))
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.shortCode").value("abc1234"))
+                .andExpect(jsonPath("$.shortUrl").value("http://localhost:8080/abc1234"))
+                .andExpect(jsonPath("$.originalUrl").value("https://www.example.com"))
+                .andExpect(jsonPath("$.expiryDate").value("2020-01-01T12:00:00"));
+    }
+
+    @Test
+    void getLink_returns404WhenCodeMissing() throws Exception {
+        when(urlService.findLink("abc1234")).thenThrow(new ShortCodeNotFoundException("abc1234"));
+
+        mockMvc.perform(get("/api/links/abc1234"))
+                .andExpect(status().isNotFound())
+                .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
+                .andExpect(jsonPath("$.instance").value("/api/links/abc1234"));
+    }
+
+    @Test
     void create_returns400WhenInvalidOriginalUrl() throws Exception {
         String tomorrowDate = LocalDateTime.now().plusDays(1).toString();
         String body = """

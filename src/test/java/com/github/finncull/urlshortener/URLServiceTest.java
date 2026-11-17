@@ -54,6 +54,25 @@ public class URLServiceTest {
     }
 
     @Test
+    public void findLink_returnsExpiredLinkWithoutThrowing(){
+        URLRepository repo = Mockito.mock(URLRepository.class);
+        URLMapping expiredMapping = new URLMapping("abc123","www.example.com", LocalDateTime.now().minusDays(1));
+        URLService service = new URLService(repo, APP_DOMAIN);
+
+        when(repo.findById("abc123")).thenReturn(Optional.of(expiredMapping));
+
+        assertSame(expiredMapping, service.findLink("abc123"));
+    }
+
+    @Test
+    public void findLink_throwsWhenCodeMissing(){
+        URLRepository repo = Mockito.mock(URLRepository.class);
+        URLService service = new URLService(repo, APP_DOMAIN);
+
+        assertThrows(ShortCodeNotFoundException.class, () -> service.findLink("abc123"));
+    }
+
+    @Test
     public void findCorrespondingURL_throwsWhenCodeMissing(){
         URLRepository repo = Mockito.mock(URLRepository.class);
         URLService service = new URLService(repo, APP_DOMAIN);
