@@ -1,5 +1,7 @@
 # URL Shortener
 
+[![CI](https://github.com/FinnCull/shortURL/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/FinnCull/shortURL/actions/workflows/ci.yml)
+
 A small URL shortening service built with Spring Boot. Submit a long `https://` URL with an expiry date and get back a short link that redirects to it until it expires.
 
 ## Features
